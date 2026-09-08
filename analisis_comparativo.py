@@ -1,9 +1,9 @@
-"""analisis_comparativo.py — Comparativo entre ciclos: Δpp, volatilidad (Pedersen),
+"""analisis_comparativo.py — Comparativo entre ciclos: Dpp, volatilidad (Pedersen),
 ganador por bloque, flips y swings."""
 from __future__ import annotations
 
-import re, unicodedata
-from pathlib import Path
+import re
+import unicodedata
 
 import numpy as np
 import pandas as pd
@@ -73,7 +73,7 @@ class ComparadorINE:
         self._tabla = None
 
     def _fusionar_matrices(self) -> pd.DataFrame:
-        """Empareja distritos. ComparadorMapeado (Etapa 2) sobreescribe esto."""
+        """Empareja distritos. ComparadorMapeado (remapeo_2027) sobreescribe esto."""
         self._m_prev_ali = self.m_prev
         return self.m_prev.merge(self.m_nuevo, on="CLAVE", how="outer",
                                  suffixes=("_A", "_B"), indicator=True)
@@ -134,11 +134,11 @@ class ComparadorINE:
         tabla[f"GANADOR_BLOQUE_{cb}"] = gB["GANADOR"].values
         tabla[f"PCT_GANADOR_{cb}"] = gB["PCT_GAN"].round(2).values
         tabla["CAMBIO_GANADOR"] = (gA["GANADOR"].fillna("") != gB["GANADOR"].fillna("")).values
+        bA = self._aplicar_bloques(ambos, "_A", tokens)
         swing = []
         for i in range(len(ambos)):
             g = gB.iloc[i]["GANADOR"]
-            pA = 100 * (self._aplicar_bloques(ambos, "_A", tokens).iloc[i].get(g, 0)
-                        / ambos.iloc[i]["TOTAL_CALC_A"]) if g else np.nan
+            pA = 100 * (bA.iloc[i].get(g, 0) / ambos.iloc[i]["TOTAL_CALC_A"]) if g else np.nan
             swing.append(gB.iloc[i]["PCT_GAN"] - pA)
         tabla["SWING_PP"] = np.round(swing, 2)
         self._tokens, self._tabla = tokens, tabla
@@ -208,9 +208,9 @@ class ComparadorINE:
         ruta = Path(ruta)
         ca, cb = self.prev.ciclo, self.nuevo.ciclo
         notas = pd.DataFrame({"Nota": [
-            "GANADOR por BLOQUE de coalición (el INE reparte votos de coalición entre miembros).",
-            f"VOLATILIDAD_PP = índice de Pedersen: 0.5·Σ|Δpp| ({ca}→{cb}).",
-            "SWING_PP = variación del bloque ganador del ciclo nuevo vs su voto previo.",
+            "GANADOR por BLOQUE de coalicion (el INE reparte votos de coalicion entre miembros).",
+            f"VOLATILIDAD_PP = indice de Pedersen: 0.5*Sum|Dpp| ({ca}->{cb}).",
+            "SWING_PP = variacion del bloque ganador del ciclo nuevo vs su voto previo.",
             f"Partidos no reconocidos: {self.no_mapeados or 'ninguno'}",
             f"Fuentes: {self.prev.ruta.name}, {self.nuevo.ruta.name}."]})
         with pd.ExcelWriter(ruta, engine="openpyxl") as xl:
@@ -222,37 +222,3 @@ class ComparadorINE:
             res["bloques"].to_excel(xl, sheet_name="Nacional bloques")
             notas.to_excel(xl, sheet_name="Notas", index=False)
         return ruta
-        if __name__ == "__main__":  # python analisis_comparativo.py 2021.csv 2024.csv
-    import argparse
-    from pathlib import Path
-
-    from dataset_ine import DatasetINE
-
-    ap = argparse.ArgumentParser(description="Comparativo INE entre ciclos")
-    ap.add_argument("prev")
-    ap.add_argument("nuevo")
-    ap.add_argument("--ciclo-prev", default="2021")
-    ap.add_argument("--ciclo-nuevo", default="2024")
-    ap.add_argument("--salida", default="comparativo.xlsx")
-    ap.add_argument("--graficas", nargs="?", const="graficas", default=None)
-    a = ap.parse_args()
-    comp = ComparadorINE(DatasetINE(a.prev, ciclo=a.ciclo_prev),
-                         DatasetINE(a.nuevo, ciclo=a.ciclo_nuevo))
-    res = comp.resumen_nacional()
-    print(f"📊 Nacional por partido\n{res['partidos'].to_string()}")
-    print(f"\n🏛️  Distritos por bloque\n{res['bloques'].to_string()}")
-    t = comp.tabla_distritos()
-    print(f"\n🔁 Cambios de bloque: {int(t['CAMBIO_GANADOR'].sum())} de {len(t)}")
-    print(f"\n✅ Exportado → {comp.exportar(a.salida).resolve()}")
-    if a.graficas:
-        try:
-            from graficas_ine import wall_map, wall_map_html
-            Path(a.graficas).mkdir(exist_ok=True)
-            cb = a.ciclo_nuevo
-            print("🖼️ ", wall_map(t, f"GANADOR_BLOQUE_{cb}", f"Ganador por bloque — {cb}",
-                                  f"{a.graficas}/wallmap_{cb}.png", "Fuente: cómputos INE"))
-            wall_map_html(t, f"GANADOR_BLOQUE_{cb}", f"Ganador por bloque — {cb}",
-                          f"{a.graficas}/wallmap_{cb}.html")
-            print(f"🌐 {a.graficas}/wallmap_{cb}.html")
-        except ImportError:
-            print("⚠️ pip install matplotlib plotly")
