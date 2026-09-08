@@ -6,3 +6,5 @@ plotly>=5.18
 streamlit>=1.36
 requests>=2.31
 tabulate>=0.9
+anthropic>=0.40
+beautifulsoup4>=4.12
