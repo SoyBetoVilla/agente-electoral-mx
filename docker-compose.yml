@@ -1,0 +1,25 @@
+services:
+  dashboard:
+    build: { context: ., target: base }
+    ports: ["8501:8501"]
+    env_file: .env
+    volumes:
+      - ./datos:/app/datos
+      - cache-streamlit:/home/appuser/.streamlit
+    restart: unless-stopped
+
+  agente:
+    build: { context: ., target: base }
+    profiles: ["cli"]
+    entrypoint: ["python", "agente_electoral_mx.py"]
+    env_file: .env
+    volumes: ["./datos:/app/datos"]
+
+  tests:
+    build: { context: ., target: dev }
+    profiles: ["tests"]
+    entrypoint: ["pytest", "-v", "--tb=short"]
+    volumes: ["./datos:/app/datos:ro"]
+
+volumes:
+  cache-streamlit:
