@@ -1,0 +1,14 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+datos/
+noche/
+graficas/
+*.xlsx
+*.csv
+dist/
+build/
+*.egg-info/
+secrets.toml
