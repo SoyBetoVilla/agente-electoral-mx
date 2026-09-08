@@ -1,7 +1,7 @@
 """Suite condensada: invariantes críticos de todo el pipeline con datasets sintéticos."""
 from __future__ import annotations
 
-import importlib
+import importlib import json
 from datetime import date
 
 import numpy as np
