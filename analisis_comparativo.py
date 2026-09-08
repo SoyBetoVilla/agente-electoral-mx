@@ -222,3 +222,37 @@ class ComparadorINE:
             res["bloques"].to_excel(xl, sheet_name="Nacional bloques")
             notas.to_excel(xl, sheet_name="Notas", index=False)
         return ruta
+        if __name__ == "__main__":  # python analisis_comparativo.py 2021.csv 2024.csv
+    import argparse
+    from pathlib import Path
+
+    from dataset_ine import DatasetINE
+
+    ap = argparse.ArgumentParser(description="Comparativo INE entre ciclos")
+    ap.add_argument("prev")
+    ap.add_argument("nuevo")
+    ap.add_argument("--ciclo-prev", default="2021")
+    ap.add_argument("--ciclo-nuevo", default="2024")
+    ap.add_argument("--salida", default="comparativo.xlsx")
+    ap.add_argument("--graficas", nargs="?", const="graficas", default=None)
+    a = ap.parse_args()
+    comp = ComparadorINE(DatasetINE(a.prev, ciclo=a.ciclo_prev),
+                         DatasetINE(a.nuevo, ciclo=a.ciclo_nuevo))
+    res = comp.resumen_nacional()
+    print(f"📊 Nacional por partido\n{res['partidos'].to_string()}")
+    print(f"\n🏛️  Distritos por bloque\n{res['bloques'].to_string()}")
+    t = comp.tabla_distritos()
+    print(f"\n🔁 Cambios de bloque: {int(t['CAMBIO_GANADOR'].sum())} de {len(t)}")
+    print(f"\n✅ Exportado → {comp.exportar(a.salida).resolve()}")
+    if a.graficas:
+        try:
+            from graficas_ine import wall_map, wall_map_html
+            Path(a.graficas).mkdir(exist_ok=True)
+            cb = a.ciclo_nuevo
+            print("🖼️ ", wall_map(t, f"GANADOR_BLOQUE_{cb}", f"Ganador por bloque — {cb}",
+                                  f"{a.graficas}/wallmap_{cb}.png", "Fuente: cómputos INE"))
+            wall_map_html(t, f"GANADOR_BLOQUE_{cb}", f"Ganador por bloque — {cb}",
+                          f"{a.graficas}/wallmap_{cb}.html")
+            print(f"🌐 {a.graficas}/wallmap_{cb}.html")
+        except ImportError:
+            print("⚠️ pip install matplotlib plotly")
