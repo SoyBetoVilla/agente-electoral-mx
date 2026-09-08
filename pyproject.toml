@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agente-electoral-mx"
+version = "1.0.0"
+description = "Pipeline electoral México: cómputos INE, comparativos, proyección 2027 con backtest, agente LLM y dashboard"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "pandas>=2.0", "numpy>=1.24", "openpyxl>=3.1", "matplotlib>=3.7",
+    "plotly>=5.18", "streamlit>=1.36", "requests>=2.31", "tabulate>=0.9",
+    "anthropic>=0.40", "beautifulsoup4>=4.12",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.5"]
+
+[project.scripts]
+electoral-mx = "cli:main"
+electoral-mx-dashboard = "cli:dashboard"
+
+[project.urls]
+Repository = "https://github.com/SoyBetoVilla/agente-electoral-mx"
+
+[tool.setuptools]
+py-modules = [
+    "cli", "dataset_ine", "demo_ine", "analisis_comparativo", "graficas_ine",
+    "proyeccion_2027", "agente_electoral_mx", "backtest", "remapeo_2027",
+    "auto_calibracion", "noche_electoral", "dashboard",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
